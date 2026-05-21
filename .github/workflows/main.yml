@@ -1,37 +1,83 @@
-name: RDP
-# rdp by yamzz modifed
+# =============================================================
+# SAKUTOPUP FREE RDP - STEALTH COMMUNITY VERSION (3 JAM)
+# =============================================================
+# INSTRUKSI PENGGUNAAN:
+# 1. Buat Repo baru, simpan file ini di .github/workflows/rdp.yml
+# 2. Ambil AUTH KEY di Tailscale.com.
+# 3. Masukkan ke Settings > Secrets > Actions (Nama: TS_KEY).
+# 4. Jalankan via tab ACTIONS.
+# =============================================================
+
+name: SAKUTOPUP-FREE-3H
 on:
-workflow_dispatch:
+  workflow_dispatch:
+
 jobs:
-secure-rdp:
-runs-on: windows-latest
-timeout-minutes: 3600
-steps:
-- name: Configure Core RDP Settings By Yamzz
-run: |
-Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
-Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
-Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "SecurityLayer" -Value 0 -Force
-netsh advfirewall firewall delete rule name="RDP-Tailscale"
-netsh advfirewall firewall add rule name="RDP-Tailscale" dir=in action=allow protocol=TCP localport=3389
-Restart-Service -Name TermService -Force
-- name: Create RDP User with Secure Password
-run: |
-$username = "YamzzOfficial"
-$password = "YamzzOffical@123"
-$securePass = ConvertTo-SecureString $password -AsPlainText -Force
-New-LocalUser -Name $username -Password $securePass -AccountNeverExpires
-Add-LocalGroupMember -Group "Administrators" -Member $username
-Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
-echo "RDP_CREDS=User: $username | Password: $password" >> $env:GITHUB_ENV
-if (-not (Get-LocalUser -Name $username)) {
-exit 1
-}
-- name: Install Tailscale
-run: |
-$tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-$installerPath = "$env:TEMP\tailscale.msi"
-Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
-Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
-Remove-Item $installerPath -Force
-- name: Establish Tailscale Connection
+  deployment:
+    runs-on: windows-latest
+    timeout-minutes: 180 # Dikunci ke 3 Jam agar akun lebih awet
+
+    steps:
+      - name: 1. System Preparation
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
+          netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
+          Restart-Service -Name TermService -Force
+
+      - name: 2. Identity Generation (Random)
+        run: |
+          $id = Get-Random -Minimum 1000 -Maximum 9999
+          $u = "UserSAKU$id"
+          
+          # Password Aman & Stabil (Besar, Kecil, Angka)
+          $sets = @("ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789")
+          $p = ""
+          foreach ($s in $sets) { $p += $s[(Get-Random -Maximum $s.Length)] }
+          $all = -join $sets
+          for ($i=1; $i -le 11; $i++) { $p += $all[(Get-Random -Maximum $all.Length)] }
+          
+          echo "SAKU_USER=$u" >> $env:GITHUB_ENV
+          echo "SAKU_PASS=$p" >> $env:GITHUB_ENV
+          
+          net user $u $p /add /y
+          net localgroup Administrators $u /add
+
+      - name: 3. Deploy Branding
+        run: |
+          $Desktop = "C:\Users\Public\Desktop"
+          $Shell = New-Object -ComObject WScript.Shell
+          $Shortcut = $Shell.CreateShortcut("$Desktop\SAKUTOPUP-WEB.url")
+          $Shortcut.TargetPath = "https://sakutopup.gamesquad.id/"
+          $Shortcut.Save()
+
+      - name: 4. Secure Tunneling
+        run: |
+          $msi = "$env:TEMP\ts.msi"
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile $msi
+          Start-Process msiexec.exe -ArgumentList "/i", "`"$msi`"", "/quiet", "/norestart" -Wait
+          
+          # Menggunakan Secret Key masing-masing user
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TS_KEY }} --hostname=SAKU-FREE-3H
+          
+          $ip = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
+          echo "SAKU_IP=$ip" >> $env:GITHUB_ENV
+
+      - name: 5. Access Information
+        run: |
+          Write-Host "`n==============================================="
+          Write-Host " [ SAKUTOPUP FREE RDP - ONLINE ]"
+          Write-Host "==============================================="
+          Write-Host " IP ADDRESS : $env:SAKU_IP"
+          Write-Host " USERNAME   : $env:SAKU_USER"
+          Write-Host " PASSWORD   : $env:SAKU_PASS"
+          Write-Host " DURASI     : 3 JAM (STEALTH)"
+          Write-Host "==============================================="
+          Write-Host " Website: sakutopup.gamesquad.id"
+          Write-Host "==============================================="
+          
+          $start = Get-Date
+          while ((Get-Date) -lt $start.AddMinutes(175)) {
+              Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Station Online..."
+              Start-Sleep -Seconds 300
+          }
