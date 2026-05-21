@@ -1,13 +1,3 @@
-# =============================================================
-# SAKUTOPUP FREE RDP - STEALTH COMMUNITY VERSION (3 JAM)
-# =============================================================
-# INSTRUKSI PENGGUNAAN:
-# 1. Buat Repo baru, simpan file ini di .github/workflows/rdp.yml
-# 2. Ambil AUTH KEY di Tailscale.com.
-# 3. Masukkan ke Settings > Secrets > Actions (Nama: TS_KEY).
-# 4. Jalankan via tab ACTIONS.
-# =============================================================
-
 name: SAKUTOPUP-FREE-3H
 on:
   workflow_dispatch:
